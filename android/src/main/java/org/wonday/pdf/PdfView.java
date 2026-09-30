@@ -34,6 +34,7 @@ import io.legere.pdfiumandroid.DefaultLogger;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerHelper;
 import com.github.barteksc.pdfviewer.PDFView;
+import com.github.barteksc.pdfviewer.PdfFileDisposer;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnErrorListener;
@@ -327,6 +328,14 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
             this.restoreYOffset = this.getCurrentYOffset();
         }
         super.onDetachedFromWindow();
+    }
+
+    // Defers the native document dispose to the rendering thread, see PdfFileDisposer.
+    @Override
+    public void recycle() {
+        Runnable disposePdfFile = PdfFileDisposer.detach(this);
+        super.recycle();
+        disposePdfFile.run();
     }
 
     private int getPdfPageCount(File pdfFile) throws IOException {
