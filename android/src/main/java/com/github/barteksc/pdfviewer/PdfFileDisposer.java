@@ -1,7 +1,5 @@
 package com.github.barteksc.pdfviewer;
 
-import android.os.Handler;
-
 // Declared in AndroidPdfViewer's package to reach PDFView's package-private
 // pdfFile/renderingHandler fields and the package-private PdfFile class.
 //
@@ -19,7 +17,13 @@ public final class PdfFileDisposer {
     // before super.recycle(), and the returned task run right after it.
     public static Runnable detach(PDFView view) {
         final PdfFile pdfFile = view.pdfFile;
-        final Handler renderingHandler = view.renderingHandler;
+        final RenderingHandler renderingHandler = view.renderingHandler;
+        // RenderingHandler.proceed() reads view.pdfFile when it dequeues a task, so drop
+        // the queued tasks (as recycle() does) before clearing the field.
+        if (renderingHandler != null) {
+            renderingHandler.stop();
+            renderingHandler.removeMessages(RenderingHandler.MSG_RENDER_TASK);
+        }
         view.pdfFile = null;
         if (pdfFile == null) {
             return () -> {};
